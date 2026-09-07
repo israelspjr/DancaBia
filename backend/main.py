@@ -49,6 +49,7 @@ engine = GameEngine(broadcast)
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     await hardware.start(engine.press)
+    await hardware.boot_animation()
     try:
         yield
     finally:

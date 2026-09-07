@@ -23,6 +23,14 @@ COLORS: dict[str, tuple[int, int, int]] = {
     "red": (255, 0, 0),
 }
 
+# Sequência de cores usada na animação de boot (teste dos anéis).
+BOOT_COLORS: list[tuple[str, tuple[int, int, int]]] = [
+    ("VERMELHO", (255, 0, 0)),
+    ("VERDE", (0, 255, 40)),
+    ("AZUL", (0, 80, 255)),
+    ("BRANCO", (255, 255, 255)),
+]
+
 
 def _env_int(name: str, default: int) -> int:
     try:
@@ -164,6 +172,66 @@ class HardwareController:
         async with self._lock:
             self._neo.clear_strip()
             self._neo.update_strip(sleep_duration=0.001)
+
+    async def _fill_all(self, rgb: tuple[int, int, int]) -> None:
+        """Acende todos os LEDs da cadeia com a mesma cor."""
+        if not self._neo:
+            return
+        async with self._lock:
+            for pixel in range(self.total_leds):
+                self._neo.set_led_color(pixel, *rgb)
+            self._neo.update_strip(sleep_duration=0.001)
+
+    async def _fill_ring(self, ring: int, rgb: tuple[int, int, int]) -> None:
+        """Apaga tudo e acende apenas o anel (ilha) indicado, 0-based."""
+        if not self._neo:
+            return
+        async with self._lock:
+            for pixel in range(self.total_leds):
+                self._neo.set_led_color(pixel, 0, 0, 0)
+            first_pixel = ring * self.leds_per_ring
+            for pixel in range(first_pixel, first_pixel + self.leds_per_ring):
+                self._neo.set_led_color(pixel, *rgb)
+            self._neo.update_strip(sleep_duration=0.001)
+
+    async def boot_animation(self, cycles: int = 2) -> None:
+        """Teste visual dos anéis executado ao subir o serviço.
+
+        Roda um número fixo de ciclos (padrão 2) e encerra: em cada ciclo
+        acende todos os LEDs em cada cor da paleta e depois faz a varredura
+        anel por anel. No modo simulador não faz nada além de registrar log.
+        """
+        if not self._neo:
+            LOGGER.info("Boot dos LEDs ignorado (modo %s).", self.mode)
+            return
+
+        LOGGER.info("Boot dos LEDs: %s ciclo(s) de teste dos anéis.", cycles)
+        try:
+            for cycle in range(1, cycles + 1):
+                LOGGER.info("Boot dos LEDs: ciclo %s/%s.", cycle, cycles)
+
+                # Fase 1: todos os LEDs juntos, uma cor de cada vez.
+                for name, base_rgb in BOOT_COLORS:
+                    rgb = tuple(round(channel * self.brightness) for channel in base_rgb)
+                    await self._fill_all(rgb)
+                    await asyncio.sleep(0.6)
+
+                await self.all_off()
+                await asyncio.sleep(0.3)
+
+                # Fase 2: varredura anel por anel (ilha por ilha).
+                for ring in range(self.ring_count):
+                    base_rgb = BOOT_COLORS[ring % len(BOOT_COLORS)][1]
+                    rgb = tuple(round(channel * self.brightness) for channel in base_rgb)
+                    await self._fill_ring(ring, rgb)
+                    await asyncio.sleep(0.18)
+
+                await self.all_off()
+                await asyncio.sleep(0.3)
+        finally:
+            # Garante que os anéis fiquem apagados ao final do boot.
+            await self.all_off()
+            LOGGER.info("Boot dos LEDs concluído.")
 
     async def apply_game_message(self, message: dict) -> None:
         message_type = message.get("type")

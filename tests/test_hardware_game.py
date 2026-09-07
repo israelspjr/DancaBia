@@ -49,6 +49,11 @@ class HardwareGameTests(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(0.2)
         self.assertEqual(self.hardware.lights[1], "off")
 
+    async def test_boot_animation_is_safe_in_simulator(self):
+        # Sem hardware real (_neo é None) o boot não deve falhar nem acender LEDs.
+        await self.hardware.boot_animation(cycles=2)
+        self.assertEqual(self.hardware.lights, ["off"] * self.hardware.ring_count)
+
 
 if __name__ == "__main__":
     unittest.main()
