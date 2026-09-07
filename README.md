@@ -130,6 +130,37 @@ Durante a rodada, os eventos do mesmo mapa comandam simultaneamente a tela e os
 anéis físicos; as botoeiras físicas entram no mesmo cálculo de pontuação usado
 pelo teclado e pelo toque na tela.
 
+## Músicas de demonstração
+
+- **Escala de demonstração** (`songs/demo`): percorre as dez notas uma vez e
+  encerra. Serve para uma verificação rápida.
+- **Teste contínuo (loop lento)** (`songs/demo-loop`): percorre as dez ilhas em
+  sequência e **repete indefinidamente** até você parar a rodada. Ideal para
+  testar as botoeiras e os anéis sem precisar reiniciar. O ritmo é de cerca de
+  3 segundos entre notas, com janela de acerto folgada (1,5 s).
+
+Qualquer chart pode virar loop adicionando `"loop": true` no `chart.json`.
+Opcionalmente, `"loop_span_ms"` define a duração de uma passada completa antes de
+recomeçar; sem ele, o sistema usa o fim do último evento mais um respiro de 1 s.
+
+## Mapeamento nota → ilha → LEDs
+
+Cada uma das dez notas/botoeiras comanda exatamente uma ilha de 12 LEDs, na
+mesma ordem da cadeia física (ver `HardwareController.ring_led_range`):
+
+| Nota (botão) | Ilha | Endereços dos LEDs |
+| --- | :---: | --- |
+| DÓ (0) | 1 | 0–11 |
+| DÓ♯ (1) | 2 | 12–23 |
+| RÉ (2) | 3 | 24–35 |
+| RÉ♯ (3) | 4 | 36–47 |
+| MI (4) | 5 | 48–59 |
+| FÁ (5) | 6 | 60–71 |
+| FÁ♯ (6) | 7 | 72–83 |
+| SOL (7) | 8 | 84–95 |
+| LÁ (8) | 9 | 96–107 |
+| SI (9) | 10 | 108–119 |
+
 v1.1
 unzip painel_guitar_hero_rpi5_hardware_servico.zip
 cd painel_guitar_hero_rpi5_hardware_servico

@@ -79,6 +79,27 @@ class HardwareController:
     def total_leds(self) -> int:
         return self.ring_count * self.leds_per_ring
 
+    def ring_led_range(self, button: int) -> range:
+        """Faixa de endereços (0-119) da ilha correspondente à nota/botão.
+
+        A cadeia física é um único fio de 120 LEDs dividido em 10 ilhas de 12.
+        O índice ``button`` (0-9) é a nota musical / botoeira; cada nota comanda
+        exatamente uma ilha, na mesma ordem da fiação:
+
+            botão 0 (DO)  -> ilha 1  -> LEDs 0..11
+            botão 1 (DO#) -> ilha 2  -> LEDs 12..23
+            botão 2 (RE)  -> ilha 3  -> LEDs 24..35
+            botão 3 (RE#) -> ilha 4  -> LEDs 36..47
+            botão 4 (MI)  -> ilha 5  -> LEDs 48..59
+            botão 5 (FA)  -> ilha 6  -> LEDs 60..71
+            botão 6 (FA#) -> ilha 7  -> LEDs 72..83
+            botão 7 (SOL) -> ilha 8  -> LEDs 84..95
+            botão 8 (LA)  -> ilha 9  -> LEDs 96..107
+            botão 9 (SI)  -> ilha 10 -> LEDs 108..119
+        """
+        first_pixel = button * self.leds_per_ring
+        return range(first_pixel, first_pixel + self.leds_per_ring)
+
     def status(self) -> dict:
         return {
             "mode": self.mode,
@@ -159,9 +180,8 @@ class HardwareController:
             return
 
         rgb = tuple(round(channel * self.brightness) for channel in COLORS[color])
-        first_pixel = button * self.leds_per_ring
         async with self._lock:
-            for pixel in range(first_pixel, first_pixel + self.leds_per_ring):
+            for pixel in self.ring_led_range(button):
                 self._neo.set_led_color(pixel, *rgb)
             self._neo.update_strip(sleep_duration=0.001)
 
@@ -189,8 +209,7 @@ class HardwareController:
         async with self._lock:
             for pixel in range(self.total_leds):
                 self._neo.set_led_color(pixel, 0, 0, 0)
-            first_pixel = ring * self.leds_per_ring
-            for pixel in range(first_pixel, first_pixel + self.leds_per_ring):
+            for pixel in self.ring_led_range(ring):
                 self._neo.set_led_color(pixel, *rgb)
             self._neo.update_strip(sleep_duration=0.001)
 

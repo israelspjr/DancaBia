@@ -54,6 +54,33 @@ class HardwareGameTests(unittest.IsolatedAsyncioTestCase):
         await self.hardware.boot_animation(cycles=2)
         self.assertEqual(self.hardware.lights, ["off"] * self.hardware.ring_count)
 
+    async def test_ring_led_range_matches_island_addresses(self):
+        # Mapa da imagem: nota/botão N -> ilha N+1 -> 12 LEDs consecutivos.
+        expected = {0: (0, 11), 4: (48, 59), 9: (108, 119)}
+        for button, (first, last) in expected.items():
+            addresses = list(self.hardware.ring_led_range(button))
+            self.assertEqual(addresses[0], first)
+            self.assertEqual(addresses[-1], last)
+            self.assertEqual(len(addresses), 12)
+
+    async def test_looping_song_repeats_until_stopped(self):
+        song = {
+            "id": "loop-test",
+            "loop": True,
+            "loop_span_ms": 200,
+            "events": [{"time_ms": 10, "button": 0, "note": "DO", "window_ms": 10}],
+        }
+        await self.engine.start(song)
+        # _run tem 3s de contagem regressiva antes de ativar; espera passar dela
+        # e dar tempo de várias passadas do loop (loop_span_ms=200ms).
+        await asyncio.sleep(3.8)
+        # Ainda rodando (não finalizou sozinho) porque é loop.
+        self.assertTrue(self.engine.active)
+        notes = [m for m in self.messages if m.get("type") == "note"]
+        self.assertGreaterEqual(len(notes), 2)
+        await self.engine.stop()
+        self.assertFalse(self.engine.active)
+
 
 if __name__ == "__main__":
     unittest.main()

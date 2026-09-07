@@ -1,5 +1,10 @@
 {
-  "id": "demo", "title": "Escala de demonstração", "artist": "Modo de teste", "duration": 32,
+  "id": "demo-loop",
+  "title": "Teste contínuo (loop lento)",
+  "artist": "Modo de teste",
+  "duration": 0,
+  "loop": true,
+  "loop_span_ms": 31000,
   "events": [
     {"time_ms":1000,"button":0,"note":"DO","window_ms":1500},
     {"time_ms":4000,"button":1,"note":"DO_SUSTENIDO","window_ms":1500},
