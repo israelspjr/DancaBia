@@ -5,3 +5,8 @@ librosa==0.11.0
 gpiozero==2.0.1.post3
 lgpio==0.2.2.0
 Pi5Neo==1.1.0
+
+# yt-dlp intencionalmente SEM pin: o YouTube muda com frequência e o yt-dlp
+# precisa estar sempre atualizado. Se downloads pararem de funcionar, rode:
+#   .venv/bin/pip install -U yt-dlp
+yt-dlp

@@ -117,11 +117,48 @@ HARDWARE_MODE=simulator .venv/bin/uvicorn backend.main:app --host 0.0.0.0 --port
 
 As teclas `1 2 3 4 5 6 7 8 9 0` simulam as dez botoeiras.
 
+## Onde as músicas ficam salvas (não somem em atualizações)
+
+As músicas de demonstração (`songs/`) vêm junto do código. As músicas que você
+**envia pelo sistema** são gravadas em uma pasta separada, fora do diretório do
+aplicativo, definida por `MUSIC_DATA_DIR` (padrão `/var/lib/music-game`). Assim,
+atualizar o código (novo zip por cima, `git pull`, rodar o instalador de novo)
+**não apaga** as músicas cadastradas.
+
+> Se antes suas músicas sumiam depois de atualizar, era porque ficavam dentro de
+> `songs/` e a atualização sobrescrevia a pasta. Agora elas ficam em
+> `MUSIC_DATA_DIR`. Não apague essa pasta ao atualizar.
+
+Backup simples das músicas enviadas:
+
+```bash
+tar czf musicas-backup.tgz -C /var/lib/music-game songs
+```
+
+## Teste de sistema (verificar os LEDs)
+
+Além do teste automático que roda no boot, há um botão **"TESTE DE SISTEMA"** na
+tela principal do jogo. Ele acende as 10 ilhas em sequência para você conferir
+se todos os anéis estão funcionando, sem precisar iniciar uma música. Também
+disponível pela API: `POST /api/system-test` (recusa se houver rodada em
+andamento).
+
 ## Administrativo de músicas
 
 Acesse `http://IP_DO_RASPBERRY:8000/inserir_musica`. Informe título, artista e
-MP3. No modo automático, a análise detecta ataques e distribui eventos pelas dez
-botoeiras. Ela é deliberadamente voltada à jogabilidade: não precisa reproduzir
+escolha a origem do áudio:
+
+- **Upload MP3 — mapa automático:** envie um arquivo MP3; o Python analisa.
+- **Link do YouTube — mapa automático:** cole a URL do vídeo. O sistema baixa o
+  áudio com `yt-dlp`, converte para MP3 (via ffmpeg) e gera o mapa. **Requer
+  internet no momento do cadastro.** Uso educacional interno (Senac SP), sem
+  fins comerciais. Se um download parar de funcionar após o YouTube mudar algo,
+  atualize a ferramenta: `.venv/bin/pip install -U yt-dlp`.
+- **Upload MP3 — colar mapa JSON:** envie o MP3 e cole manualmente o mapa.
+
+Não é necessário converter para MIDI: a análise detecta os ataques do áudio e
+escolhe a nota predominante para cada evento. No modo automático, a análise
+distribui eventos pelas dez botoeiras. Ela é deliberadamente voltada à jogabilidade: não precisa reproduzir
 todas as notas nem separar perfeitamente cada timbre. Depois é possível ajustar
 tempos e botoeiras na tabela.
 

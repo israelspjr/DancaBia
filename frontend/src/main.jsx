@@ -30,18 +30,22 @@ function App(){
       if(m.type==="feedback" && m.result==="miss"){paint(m.button,"red");setCombo(0);setStatus("PERDEU A NOTA")}
       if(m.type==="finished"){audio.current.pause();setLights(Array(10).fill("off"));setStatus("RODADA FINALIZADA");setResult(m)}
       if(m.type==="stopped") audio.current.pause();
+      if(m.type==="system_test_started") setStatus("TESTE DE SISTEMA: acendendo as 10 ilhas...");
+      if(m.type==="system_test_finished"){setLights(Array(10).fill("off"));setStatus("TESTE DE SISTEMA CONCLUÍDO");}
     };
     const keydown=e=>{const i=KEYS.indexOf(e.key); if(i>=0 && !e.repeat) press(i)};
     addEventListener("keydown",keydown); return()=>{removeEventListener("keydown",keydown);socket.close()};
   },[]);
 
   const start=()=>{const song=songs.find(item=>item.id===selected);if(song?.audio){audio.current.src=song.audio;audio.current.muted=true;audio.current.play().catch(()=>{});}ws.current?.send(JSON.stringify({type:"start",song:selected}))};
+  const systemTest=async()=>{setStatus("TESTE DE SISTEMA: iniciando...");const r=await fetch("/api/system-test",{method:"POST"});if(!r.ok){const d=await r.json().catch(()=>({}));setStatus(d.detail||"Não foi possível iniciar o teste de sistema")}};
   if(location.pathname==="/inserir_musica") return <Admin songs={songs} reload={()=>fetch("/api/songs").then(r=>r.json()).then(setSongs)}/>;
   return <main>
     <header><div><small>RASPBERRY PI 5</small><h1>DESAFIO MUSICAL</h1></div><div className="score"><span>PONTOS</span><b>{score}</b><span>COMBO × {combo}</span></div></header>
     <section className="panel">
       <label>MÚSICA</label><select value={selected} onChange={e=>setSelected(e.target.value)}>{songs.map(s=><option key={s.id} value={s.id}>{s.title}</option>)}</select>
       <button className="start" onClick={start} disabled={!selected}>INICIAR RODADA</button>
+      <button className="systest" onClick={systemTest} type="button">TESTE DE SISTEMA</button>
     </section>
     <div className="status">{status}</div>
     <section className="buttons">{NOTES.map((note,i)=><button key={note} className={`music ${lights[i]}`} onPointerDown={()=>press(i)}><span>{KEYS[i]}</span><b>{note}</b></button>)}</section>
@@ -52,9 +56,9 @@ function App(){
 
 function Admin({songs,reload}){
   const example=`[\n  {"time_ms": 1000, "button": 0, "note": "DO", "window_ms": 450},\n  {"time_ms": 2200, "button": 2, "note": "RE", "window_ms": 450}\n]`;
-  const [message,setMessage]=useState(""),[events,setEvents]=useState([]),[editingId,setEditingId]=useState("");
+  const [message,setMessage]=useState(""),[events,setEvents]=useState([]),[editingId,setEditingId]=useState(""),[mode,setMode]=useState("automatic");
   const submit=async e=>{
-    e.preventDefault();const form=e.currentTarget;setMessage("Analisando o MP3. Isso pode levar alguns minutos no Raspberry...");
+    e.preventDefault();const form=e.currentTarget;setMessage(mode==="youtube"?"Baixando do YouTube e analisando. Pode levar alguns minutos no Raspberry...":"Analisando o MP3. Isso pode levar alguns minutos no Raspberry...");
     const response=await fetch("/api/songs",{method:"POST",body:new FormData(form)});
     const data=await response.json();
     if(!response.ok){setMessage(data.detail||"Falha no envio");return}
@@ -70,8 +74,10 @@ function Admin({songs,reload}){
       <form className="upload" onSubmit={submit}>
         <label>TÍTULO</label><input name="title" required placeholder="Nome da música"/>
         <label>ARTISTA</label><input name="artist" placeholder="Nome do artista"/>
-        <label>ARQUIVO MP3</label><input name="audio" type="file" accept="audio/mpeg,.mp3" required/>
-        <label>GERAÇÃO DO MAPA</label><select name="generation_mode" defaultValue="automatic"><option value="automatic">Automática pelo Python</option><option value="manual">Colar mapa JSON</option></select>
+        <label>GERAÇÃO DO MAPA</label><select name="generation_mode" value={mode} onChange={e=>setMode(e.target.value)}><option value="automatic">Upload MP3 — mapa automático</option><option value="youtube">Link do YouTube — mapa automático</option><option value="manual">Upload MP3 — colar mapa JSON</option></select>
+        {mode==="youtube"
+          ? <><label>LINK DO YOUTUBE</label><input name="youtube_url" type="url" placeholder="https://www.youtube.com/watch?v=..." required/><p className="hint">Uso educacional interno (Senac SP). Requer internet no momento do cadastro.</p></>
+          : <><label>ARQUIVO MP3</label><input name="audio" type="file" accept="audio/mpeg,.mp3" required/></>}
         <label>DIFICULDADE</label><select name="difficulty" defaultValue="medium"><option value="easy">Fácil — menos notas</option><option value="medium">Média</option><option value="hard">Difícil — mais notas</option></select>
         <label>MÁXIMO DE NOTAS</label><input name="max_notes" type="number" min="10" max="2000" defaultValue="350"/>
         <details><summary>Mapa manual (opcional)</summary><textarea name="chart_json" defaultValue={example}/></details>
