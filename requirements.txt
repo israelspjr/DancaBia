@@ -3,8 +3,14 @@ uvicorn[standard]==0.35.0
 python-multipart==0.0.20
 librosa==0.11.0
 gpiozero==2.0.1.post3
-lgpio==0.2.2.0
 Pi5Neo==1.1.0
+
+# lgpio NÃO é instalado pelo pip de propósito. No Raspberry Pi OS trixie
+# (Python 3.13) não há wheel pronto e a compilação falha com "cannot find
+# -llgpio" quando a lib nativa não está presente. O instalador instala o
+# pacote do sistema (python3-lgpio) via apt e o .venv é criado com
+# --system-site-packages para enxergá-lo. Em outros ambientes, se precisar do
+# lgpio pelo pip, garanta antes: sudo apt install -y liblgpio-dev
 
 # yt-dlp intencionalmente SEM pin: o YouTube muda com frequência e o yt-dlp
 # precisa estar sempre atualizado. Se downloads pararem de funcionar, rode:

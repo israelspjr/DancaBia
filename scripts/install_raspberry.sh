@@ -5,10 +5,15 @@ APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SERVICE_USER="${SUDO_USER:-$USER}"
 
 sudo apt update
-sudo apt install -y python3 python3-venv python3-pip ffmpeg libsndfile1 raspi-config
+# python3-lgpio: módulo GPIO do Pi 5 pelo apt (evita compilar pelo pip, que
+# falha no Pi OS trixie/Python 3.13 com "cannot find -llgpio"). liblgpio-dev
+# fica como reserva caso algo ainda precise compilar contra a lib nativa.
+sudo apt install -y python3 python3-venv python3-pip ffmpeg libsndfile1 raspi-config \
+  python3-lgpio liblgpio-dev
 sudo raspi-config nonint do_spi 0
 sudo usermod -aG gpio,spi "$SERVICE_USER"
-python3 -m venv "$APP_DIR/.venv"
+# --system-site-packages: o venv enxerga o python3-lgpio instalado pelo apt.
+python3 -m venv --system-site-packages "$APP_DIR/.venv"
 "$APP_DIR/.venv/bin/pip" install --upgrade pip
 "$APP_DIR/.venv/bin/pip" install -r "$APP_DIR/requirements.txt"
 

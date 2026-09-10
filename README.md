@@ -105,6 +105,25 @@ sudo nano /etc/default/music-game
 sudo systemctl restart music-game
 ```
 
+## Erro ao instalar o lgpio (`cannot find -llgpio`)
+
+No Raspberry Pi OS **trixie** (Python 3.13) não existe wheel pronto do `lgpio`,
+e instalá-lo pelo pip tenta compilar e falha com `cannot find -llgpio`. Por isso
+o `lgpio` **não** está no `requirements.txt`: o instalador usa o pacote do
+sistema (`python3-lgpio`) via apt e cria o ambiente com `--system-site-packages`.
+
+Se você já tomou esse erro, refaça o ambiente:
+
+```bash
+cd /home/user/raspi-music-game
+sudo apt update
+sudo apt install -y python3-lgpio liblgpio-dev
+rm -rf .venv
+python3 -m venv --system-site-packages .venv
+.venv/bin/pip install --upgrade pip
+.venv/bin/pip install -r requirements.txt
+```
+
 ## Teste sem instalar o serviço
 
 Em um computador comum, o modo `auto` seleciona o simulador:
