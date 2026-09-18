@@ -136,6 +136,51 @@ HARDWARE_MODE=simulator .venv/bin/uvicorn backend.main:app --host 0.0.0.0 --port
 
 As teclas `1 2 3 4 5 6 7 8 9 0` simulam as dez botoeiras.
 
+## Modo totem/quiosque (abrir o jogo sozinho no HDMI ao ligar)
+
+Para o Raspberry funcionar como um totem — liga na tomada e o jogo aparece em
+tela cheia no monitor/TV via HDMI, sem precisar de outro computador para acessar
+`:8000` — use o instalador de quiosque. Ele funciona no **Raspberry Pi OS Lite**
+(só terminal): instala o mínimo gráfico (Xorg + Chromium), configura login
+automático e abre o navegador em tela cheia no jogo local.
+
+```bash
+cd raspi-music-game
+chmod +x scripts/install_kiosk.sh
+./scripts/install_kiosk.sh
+sudo reboot
+```
+
+Depois do reboot, ao ligar o Pi:
+
+1. faz login automático no terminal;
+2. sobe o ambiente gráfico mínimo;
+3. **espera** o jogo responder em `http://localhost:8000` (evita "tela branca");
+4. abre o Chromium em tela cheia já no jogo.
+
+Se o navegador travar/fechar, ele reabre sozinho. O apagamento de tela e o
+protetor ficam desligados (o totem fica sempre aceso), o cursor some quando
+parado, e o aviso de "restaurar páginas" após queda de energia é suprimido.
+
+**Ligar/desligar da tomada:** funciona — o serviço e o quiosque sobem sozinhos.
+Ainda assim, desligar direto na tomada por muito tempo pode desgastar o cartão
+SD; se possível, prefira desligar pelo sistema.
+
+### Sair do quiosque para manutenção
+
+- Conecte um teclado e pressione **Ctrl+Alt+F2** para abrir outro terminal (faça
+  login e trabalhe); **Ctrl+Alt+F1** volta para o jogo.
+- Ou acesse por **SSH** de outro computador da rede.
+- Para desativar o modo quiosque de vez (volta ao terminal normal no boot):
+
+```bash
+./scripts/uninstall_kiosk.sh
+sudo reboot
+```
+
+O jogo continua rodando em `http://localhost:8000` mesmo com o quiosque
+desativado (o serviço `music-game` é independente).
+
 ## Onde as músicas ficam salvas (não somem em atualizações)
 
 As músicas de demonstração (`songs/`) vêm junto do código. As músicas que você
